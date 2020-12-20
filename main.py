@@ -324,7 +324,7 @@ def acs_solution(d, m, Cnn, rho, alpha, beta, theta, ksi, q0, n_iter_no_change, 
     min_dist = acs.map.best_path_dist
     curr_iter_no_change = 0
     n = 0
-    while curr_iter_no_change < n_iter_no_change and n < max_iter:  # 如果最优路径经过n次迭代不变且至少经过了min_iter次迭代才会停止循环
+    while curr_iter_no_change < n_iter_no_change and n < max_iter:  # 如果最优路径经过n次迭代不变或超过了max_iter次迭代才会停止循环
         yield n, acs.iter()
         if acs.map.best_path_dist < min_dist:
             min_dist = acs.map.best_path_dist

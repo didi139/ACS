@@ -35,6 +35,10 @@ class NoAvailableNodeError(Error):
     pass
 
 
+class InvalidProblemError(Error):
+    pass
+
+
 def neighbor_pair(data: list, circle=True):
     for i in range(1 - circle, len(data)):
         yield data[i - 1], data[i]
@@ -351,7 +355,7 @@ def random_cost(m: int, n: int, p_zero=.05, p_inf=.0):
     return res
 
 
-def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=200, verbose=1, draw=False):
+def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=200, verbose=1, draw=False, imgpath=''):
     begin_time = time()
     Cnn = greedy_search(d)
     end_time = time()
@@ -362,6 +366,8 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
     km_delta_time = int((end_time - begin_time) * 1000)
     worst_path_dist = -hungarian_method(-d)
     tau0 = 1 / (sum(d.shape) * Cnn)
+    if worst_path_dist == 0:
+        raise
 
     def test0(theta):
         finder = acs_solution(d, m, Cnn, rho, alpha, beta, theta, ksi, q0, n_iter_no_change, max_iter)
@@ -404,7 +410,7 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
         return curr_best_path_dist_list, best_path_dist_list, best_path_dist
 
     res_list = [test0(theta) for theta in thetas]
-    if draw:
+    if imgpath or draw:
         plt.rcParams['figure.figsize'] = (12, 9)
         plt.gcf().set_tight_layout(True)
         plt.axhline(Cnn / worst_path_dist, label='贪婪算法')
@@ -418,20 +424,28 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
             plt.plot(np.divide(cbpdl, worst_path_dist), alpha=0.25)
             plt.plot(np.divide(bpdl, worst_path_dist), label=label)
         plt.legend()
-        plt.show()
+        if imgpath:
+            plt.savefig(imgpath)
+        if draw:
+            plt.show()
+        else:
+            plt.close(plt.gcf())
 
-    return [((Cnn - bpd) / bpd, (km - bpd) / bpd) for (cbpdl, bpdl, bpd) in res_list]
+    return [((Cnn - bpd) / worst_path_dist, (km - bpd) / worst_path_dist) for _, _, bpd in res_list]
 
 
 def test_many(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=200, verbose=0, draw_step=0,
-              times=30):
+              times=30, save_image=False):
     Cnn_delta_list = [[] for _ in enumerate(thetas)]
     km_delta_list = [[] for _ in enumerate(thetas)]
     for i in range(times):
         print(f'第{i}次测试：')
         dd = d() if callable(d) else d
         draw = i % draw_step == 0 if draw_step > 0 else False
-        res = test(dd, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change, max_iter, verbose, draw)
+        kwargs = {}
+        if save_image:
+            kwargs['imgpath'] = f'./data/{i + 1}.png'
+        res = test(dd, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change, max_iter, verbose, draw, **kwargs)
         for j, r in enumerate(res):
             Cnn_delta_list[j].append(r[0])
             km_delta_list[j].append(r[1])
@@ -447,7 +461,12 @@ def test_many(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_
         plt.plot(ca, label=f'相较于贪婪算法的提升（θ={theta}）')
         plt.plot(ka, label=f'与最优解的差距（θ={theta}）')
     plt.legend()
-    plt.show()
+    if save_image:
+        plt.savefig('./data/performance.png')
+    if draw_step != 0:
+        plt.show()
+    else:
+        plt.close(plt.gcf())
 
 
 def main():
@@ -462,9 +481,11 @@ def main():
     n_iter_no_change = 25
     max_iter = 2000
     verbose = 1
-    draw_step = 5
+    draw_step = 0
     times = 300
-    return test_many(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change, max_iter, verbose, draw_step, times)
+    save_image = True
+    return test_many(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change, max_iter, verbose, draw_step, times,
+                     save_image)
 
 
 if __name__ == '__main__':

@@ -355,7 +355,24 @@ def random_cost(m: int, n: int, p_zero=.05, p_inf=.0):
     return res
 
 
+# 测试
 def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=200, verbose=1, draw=False, imgpath=''):
+    """
+    :param d:
+    :param m:
+    :param rho:
+    :param alpha:
+    :param beta:
+    :param thetas:
+    :param ksi:
+    :param q0:
+    :param n_iter_no_change:
+    :param max_iter:
+    :param verbose: 控制输出的详细程度
+    :param draw: 是否绘画图片
+    :param imgpath: 图片输出路径
+    :return:
+    """
     begin_time = time()
     Cnn = greedy_search(d)
     end_time = time()
@@ -413,7 +430,9 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
     if imgpath or draw:
         plt.rcParams['figure.figsize'] = (12, 9)
         plt.gcf().set_tight_layout(True)
+        # 绘画贪婪算法结果
         plt.axhline(Cnn / worst_path_dist, label='贪婪算法')
+        # 绘画最优解的结果
         plt.axhline(km / worst_path_dist, label='最优解')
         labels = ['蚁群系统'] * len(thetas)
         if len(thetas) > 1:
@@ -421,7 +440,9 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
                 labels[i] = f'{label}（θ={thetas[i]}）'
 
         for (cbpdl, bpdl, bpd), label in zip(res_list, labels):
+            # 当前迭代最优路径长度曲线
             plt.plot(np.divide(cbpdl, worst_path_dist), alpha=0.25)
+            # 至今最优路径长度曲线
             plt.plot(np.divide(bpdl, worst_path_dist), label=label)
         plt.legend()
         if imgpath:
@@ -436,6 +457,23 @@ def test(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=
 
 def test_many(d, m, rho, alpha, beta, thetas, ksi, q0, n_iter_no_change=10, max_iter=200, verbose=0, draw_step=0,
               times=30, save_image=False):
+    """
+    :param d:
+    :param m:
+    :param rho:
+    :param alpha:
+    :param beta:
+    :param thetas:
+    :param ksi:
+    :param q0:
+    :param n_iter_no_change:
+    :param max_iter:
+    :param verbose:
+    :param draw_step: 每多少轮测试输出一次图片
+    :param times: 测试的次数
+    :param save_image: 是否保存图片
+    :return:
+    """
     Cnn_delta_list = [[] for _ in enumerate(thetas)]
     km_delta_list = [[] for _ in enumerate(thetas)]
     for i in range(times):
